@@ -1,4 +1,4 @@
-name: HTML to APK (Final Success)
+name: HTML to APK (Final Success with Icon)
 on: [push]
 
 jobs:
@@ -19,7 +19,8 @@ jobs:
           mkdir -p www
           cp -r ./* www/ || true
           rm -rf www/.github
-          npm install -g @ionic/cli
+          # @capacitor/assets ကို Icon ထုတ်ရန်အတွက် ထည့်သွင်းလိုက်ပါသည်
+          npm install -g @ionic/cli @capacitor/assets
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Initialize and Build Android
@@ -28,6 +29,9 @@ jobs:
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
           
+          # Icon နှင့် Splash Screen ထုတ်ပေးသည့်အဆင့် (icon.png နှင့် splash.png ရှိရန်လိုသည်)
+          npx capacitor-assets generate --android
+
           # Webview Settings ပြင်ဆင်ခြင်း
           sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
           
@@ -47,4 +51,3 @@ jobs:
         with:
           name: KEEC13-ubt5-App-APK
           path: KEEC13-ubt5-app.apk
-          
