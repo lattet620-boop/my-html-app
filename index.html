@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>2026 Vertical Reading & CB Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Montserrat:wght@400;700&family=Pyidaungsu:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #00ff87; --secondary: #3a7bd5; --success: #00ff87; --danger: #ff0055; --dark: #080e1a; --text: #1e293b; --light-green: #90ee90; --card-bg: #ffffff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Montserrat', 'Pyidaungsu', sans-serif; }
+        body { background: #f0f2f5; margin: 0; height: 100dvh; display: flex; flex-direction: column; color: var(--text); }
+
+        .screen { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle, #1e293b, #080e1a); }
+        .card { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(20px); width: 100%; max-width: 500px; border-radius: 30px; border: 4px solid var(--primary); text-align: center; overflow: hidden; box-shadow: 0 0 30px rgba(0, 255, 135, 0.3); color: white; }
+        .card-header { background: linear-gradient(90deg, #00b09b, #96c93d); padding: 35px; font-family: 'Orbitron'; font-weight: bold; font-size: 24px; }
+
+        input#user-name { width: 80%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 20px; font-size: 18px; text-align: center; outline: none; }
+
+        /* Exam Screen Layout */
+        #exam-screen { display: none; flex-direction: column; height: 100vh; }
+        .ubt-header { position: sticky; top: 0; z-index: 100; display: flex; background: #0f172a; color: #fff; height: 60px; border-bottom: 4px solid var(--primary); }
+        .h-box { flex: 1; border-right: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+
+        /* Scrollable Area */
+        .scroll-view { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 25px; padding-bottom: 50px; }
+        
+        .q-container { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .q-text { font-weight: bold; font-size: 16px; margin-bottom: 15px; color: #334155; }
+        .q-img { max-width: 100%; max-height: 200px; border-radius: 10px; margin-bottom: 15px; display: block; border: 1px solid #eee; }
+
+        .a-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ans-item { background: #f8fafc; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; position: relative; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; padding: 12px; font-weight: 700; font-size: 14px; color: var(--text); transition: 0.2s; min-height: 60px; gap: 10px; }
+        
+        .opt-num { min-width: 28px; height: 28px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #64748b; transition: 0.2s; }
+
+        .ans-item.selected { background: var(--light-green) !important; border-color: #32cd32 !important; }
+        .ans-item.selected .opt-num { background: #32cd32; color: white; }
+        .ans-item.correct-ans { background: #dcfce7 !important; border-color: var(--success) !important; }
+        .ans-item.correct-ans .opt-num { background: var(--success); color: #000; }
+        .ans-item.wrong-ans { background: #fee2e2 !important; border-color: var(--danger) !important; }
+        .ans-item.wrong-ans .opt-num { background: var(--danger); color: white; }
+
+        .submit-area { padding: 20px; background: #fff; border-top: 1px solid #e2e8f0; text-align: center; }
+        .submit-btn { width: 100%; max-width: 400px; padding: 18px; border-radius: 15px; background: var(--danger); color: #fff; border: none; font-weight: 900; font-size: 18px; cursor: pointer; }
+
+        /* Keypad for CB */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 250px; margin: 10px auto; }
+        .key { background: #f1f5f9; border: none; padding: 12px; border-radius: 10px; font-size: 18px; font-weight: 800; cursor: pointer; color: var(--dark); }
+        
+        /* Loading Overlay */
+        #loading { display: none; background: rgba(0,0,0,0.8); color: white; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">SAVING SCORE...</div>
+
+    <div id="login-screen" class="screen">
+        <div class="card">
+            <div class="card-header">EPS-TOPIK UBT TEST</div>
+            <div style="padding: 45px;">
+                <input type="text" id="user-name" placeholder="Enter Your Name" autocomplete="off">
+                <button onclick="startExam()" style="width:100%; padding:22px; border-radius:15px; background:var(--success); border:none; color:#000; font-weight:900; font-size:20px; cursor:pointer;">START EXAM</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exam-screen">
+        <div class="ubt-header">
+            <div class="h-box" id="student-name">STUDENT</div>
+            <div class="h-box" id="timer-val" style="color:var(--success); font-size:20px;">25:00</div>
+            <div class="h-box">Solved: <span id="rem-count">0</span>/20</div>
+        </div>
+
+        <div class="scroll-view" id="questions-list"></div>
+
+        <div class="submit-area" id="submit-section">
+            <button class="submit-btn" onclick="finishExam()">SUBMIT EXAM</button>
+        </div>
+    </div>
+
+    <div id="cb-screen" class="screen" style="display:none;">
+        <div class="card" style="background:#fff; color:#000;">
+            <div class="card-header" style="color:white; padding:15px;">COLOUR BLIND TEST</div>
+            <div style="padding: 15px;">
+                <div id="cb-timer-val" style="font-size:25px; color:var(--danger); font-family:Orbitron;">60</div>
+                <img id="cb-img" src="" style="width:160px; height:160px; border-radius:50%; margin:10px auto; display:block; border:4px solid #eee;">
+                <div id="cb-display" style="font-size:30px; font-weight:bold; height:40px; color:var(--secondary); text-align:center;"></div>
+                <div class="keypad">
+                    <button class="key" onclick="pressKey('1')">1</button><button class="key" onclick="pressKey('2')">2</button><button class="key" onclick="pressKey('3')">3</button>
+                    <button class="key" onclick="pressKey('4')">4</button><button class="key" onclick="pressKey('5')">5</button><button class="key" onclick="pressKey('6')">6</button>
+                    <button class="key" onclick="pressKey('7')">7</button><button class="key" onclick="pressKey('8')">8</button><button class="key" onclick="pressKey('9')">9</button>
+                    <button class="key" style="background:#ff9f43; color:white;" onclick="pressKey('DEL')">C</button><button class="key" onclick="pressKey('0')">0</button>
+                    <button class="key" style="background:var(--success); color:white;" onclick="nextCB()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen" style="display:none;">
+        <div class="card">
+            <div class="card-header">EXAM RESULT</div>
+            <div style="padding:40px;">
+                <h1 id="res-score" style="font-size:60px; color:var(--primary); margin:0;">0</h1>
+                <p id="cb-res-text" style="color:var(--success); font-weight:bold;"></p>
+                <button onclick="reviewInPlace()" style="width:100%; padding:15px; border-radius:12px; background:var(--success); color:#000; border:none; margin-top:20px; font-weight:bold;">REVIEW ANSWERS</button>
+                <button onclick="location.reload()" style="width:100%; padding:15px; border-radius:12px; background:var(--secondary); color:#fff; border:none; margin-top:10px; font-weight:bold;">RETAKE</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzESotsZA-vabanAiAo6wnhO6YNmAIQMe_FgiWs-SIbRmyv5b1LY7_rSA1hnlK2n1qy/exec"; // ဒီနေရာမှာ Web App URL အစားထိုးပါ
+    
+    let questions = [], userAns = Array(20).fill(null); 
+    let examClock = 1500, timerId; 
+    let isReviewMode = false, userName = "";
+    let cbQuestions = [], cbIdx = 0, cbCorrect = 0, cbClock = 60, currentInput = "";
+
+    const shuffle = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+
+    function startExam() {
+        userName = document.getElementById('user-name').value.trim();
+        if(!userName) return alert("Please enter your name");
+        
+        document.getElementById('student-name').innerText = userName;
+        let r_shuffled = shuffle([...readingData]).slice(0, 20);
+        questions = r_shuffled.map(q => {
+            let originalCorrect = q.c;
+            let shuffledA = shuffle([...q.a]);
+            let newCorrectIdx = shuffledA.findIndex(opt => (opt.t === originalCorrect || opt.i === originalCorrect));
+            return { ...q, a: shuffledA, c: newCorrectIdx };
+        });
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('exam-screen').style.display = 'flex';
+        renderAll();
+        timerId = setInterval(() => {
+            if(examClock > 0) {
+                examClock--;
+                let m = Math.floor(examClock/60), s = examClock%60;
+                document.getElementById('timer-val').innerText = `${m}:${s<10?'0':''}${s}`;
+            } else { finishExam(); }
+        }, 1000);
+    }
+
+    function renderAll() {
+        const container = document.getElementById('questions-list');
+        container.innerHTML = questions.map((q, qIdx) => {
+            let optionsHtml = q.a.map((opt, aIdx) => {
+                let content = opt.t ? `<span>${opt.t}</span>` : `<img src="${opt.i}" style="height:50px;">`;
+                let statusClass = (isReviewMode && aIdx === q.c) ? "correct-ans" : (isReviewMode && userAns[qIdx] === aIdx ? "wrong-ans" : (userAns[qIdx] === aIdx ? "selected" : ""));
+                return `<div class="ans-item ${statusClass}" onclick="pick(${qIdx}, ${aIdx})"><div class="opt-num">${aIdx + 1}</div>${content}</div>`;
+            }).join('');
+            return `<div class="q-container"><div class="q-text">${qIdx + 1}. ${q.q}</div>${q.img ? `<img src="${q.img}" class="q-img">` : ''}<div class="a-grid">${optionsHtml}</div></div>`;
+        }).join('');
+        document.getElementById('rem-count').innerText = userAns.filter(a => a !== null).length;
+    }
+
+    function pick(qIdx, aIdx) { if (!isReviewMode) { userAns[qIdx] = aIdx; renderAll(); } }
+
+    function finishExam() {
+        if(!confirm("Submit and start Colour Blind Test?")) return;
+        clearInterval(timerId);
+        document.getElementById('exam-screen').style.display = 'none';
+        document.getElementById('cb-screen').style.display = 'flex';
+        cbQuestions = shuffle([...cbMaster]).slice(0, 5); 
+        renderCB();
+        setInterval(() => { if(cbClock > 0) { cbClock--; document.getElementById('cb-timer-val').innerText = cbClock; } else if(cbIdx < cbQuestions.length) showFinal(); }, 1000);
+    }
+
+    function renderCB() {
+        if(cbIdx >= cbQuestions.length) return showFinal();
+        document.getElementById('cb-img').src = cbQuestions[cbIdx].img;
+        currentInput = ""; document.getElementById('cb-display').innerText = "";
+    }
+
+    function pressKey(val) {
+        if(val === 'DEL') currentInput = currentInput.slice(0, -1);
+        else if(currentInput.length < 3) currentInput += val;
+        document.getElementById('cb-display').innerText = currentInput;
+    }
+
+    function nextCB() {
+        if(currentInput === "") return;
+        if(currentInput === cbQuestions[cbIdx].ans) cbCorrect++;
+        cbIdx++; renderCB();
+    }
+
+    async function showFinal() {
+        document.getElementById('cb-screen').style.display = 'none';
+        document.getElementById('loading').style.display = 'flex';
+        
+        let correctCount = userAns.filter((ans, i) => ans === questions[i].c).length;
+        let score = correctCount * 5;
+
+        // Google Sheets သို့ Data ပို့ခြင်း
+        try {
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: userName, score: score })
+            });
+        } catch (e) { console.error(e); }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'flex';
+        document.getElementById('res-score').innerText = score;
+        document.getElementById('cb-res-text').innerText = `Colour Blind Test: ${cbCorrect} / ${cbQuestions.length} Correct`;
+    }
+
+    function reviewInPlace() {
+        isReviewMode = true;
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('exam-screen').style.display = 'flex';
+        document.getElementById('submit-section').innerHTML = `<button class="submit-btn" style="background:var(--secondary)" onclick="location.reload()">EXIT REVIEW</button>`;
+        renderAll();
+    }
+
+    const readingData = [
+    {
+        "q": "다음 내용과 관계있는 그림을 고르십시오.<br><br>짐을 싸고 있습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": null,
+                "i": "AA.png"
+            },
+            {
+                "t": null,
+                "i": "AB.png"
+            },
+            {
+                "t": null,
+                "i": "AC.png"
+            },
+            {
+                "t": null,
+                "i": "AD.png"
+            }
+        ],
+        "c": "AA.png"
+    },
+    {
+        "q": "다음 단어와 관계있는 것은 무엇입니까?<br><br>호텔",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "교통"
+            },
+            {
+                "t": "숙소"
+            },
+            {
+                "t": "초대"
+            },
+            {
+                "t": "취미"
+            }
+        ],
+        "c": "숙소"
+    },
+    {
+        "q": "다음 중 밑줄 친 부분이 맞는 문장을 고르십시오.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "바다가 무척 <u>아름답을</u> 거예요."
+            },
+            {
+                "t": "쓰레기는 봉투에 <u>넣아야</u> 해요."
+            },
+            {
+                "t": "저녁에 불고기를 <u>만들려고</u> 해요."
+            },
+            {
+                "t": "청소하기 전에 창문을 <u>열으야</u> 돼요."
+            }
+        ],
+        "c": "저녁에 불고기를 <u>만들려고</u> 해요."
+    },
+    {
+        "q": "빈칸에 들어갈 가장 알맞은 것을 고르십시오.<br><br>휴가 때 친구하고 부산에 여행을 갈 겁니다. 싸고 좋은 호텔이 있어서 오늘 ______ .",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "양보했습니다"
+            },
+            {
+                "t": "정리했습니다"
+            },
+            {
+                "t": "처방했습니다"
+            },
+            {
+                "t": "예약했습니다"
+            }
+        ],
+        "c": "예약했습니다"
+    },
+    {
+        "q": "다음 글을 읽고 내용과 같은 것을 고르십시오.<br><br>서울에는 경복궁과 창덕궁 등 조선 시대의 궁궐이 잘 보존되어 있습니다. 이러한 역사적인 건축물은 현대적인 빌딩과 어우러져 서울의 모습을 더욱 아름답게 합니다. 안동은 조선 시대의 유교 문화가 고스란히 남아있는 도시입니다. 하회마을에는 전통 가옥이 그대로 보존되어 있습니다. 경주는 옛날 신라의 수도였던 도시로 다양한 문화유산이 보존되어 있습니다. 불국사와 석굴암은 신라의 불교문화를 상징하는 대표적인 문화유산입니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "경복궁과 창덕궁은 불교문화를 상징하는 문화유산입니다."
+            },
+            {
+                "t": "하회마을에 가면 신라 시대의 전통 가옥을 볼 수 있습니다."
+            },
+            {
+                "t": "경주는 조선 시대의 유교 문화가 잘 보존되어 있는 도시입니다."
+            },
+            {
+                "t": "서울은 조선 시대의 궁궐과 현대적 빌딩이 잘 어우러진 도시입니다."
+            }
+        ],
+        "c": "서울은 조선 시대의 궁궐과 현대적 빌딩이 잘 어우러진 도시입니다."
+    },
+    {
+        "q": "다음 내용과 관계있는 그림을 고르십시오.<br><br>영화를 보고 있습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": null,
+                "i": "FA.png"
+            },
+            {
+                "t": null,
+                "i": "FB.png"
+            },
+            {
+                "t": null,
+                "i": "FC.png"
+            },
+            {
+                "t": null,
+                "i": "FD.png"
+            }
+        ],
+        "c": "FB.png"
+    },
+    {
+        "q": "다음 중 밑줄 친 부분이 맞는 문장을 고르십시오.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "동생이 피아노를 <u>췄어요</u>."
+            },
+            {
+                "t": "주말에 배드민턴을 <u>탔어요</u>."
+            },
+            {
+                "t": "친구와 테니스를 <u>들었어요</u>."
+            },
+            {
+                "t": "바다가 예뻐서 사진을 <u>찍었어요</u>."
+            }
+        ],
+        "c": "바다가 예뻐서 사진을 <u>찍었어요</u>."
+    },
+    {
+        "q": "빈칸에 들어갈 가장 알맞은 것을 고르십시오.<br><br>제 취미는 ________ 입니다. 그래서 저는 시간이 있을 때마다 바다에 가서 물고기를 잡습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "여행"
+            },
+            {
+                "t": "등산"
+            },
+            {
+                "t": "낚시"
+            },
+            {
+                "t": "독서"
+            }
+        ],
+        "c": "낚시"
+    },
+    {
+        "q": "빈칸에 들어갈 가장 알맞은 것을 고르십시오.<br><br>저는 ________ 을/를 좋아합니다.주말마다 회사 동료들과 축구를 하거나 배드민턴을 칩니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "운동"
+            },
+            {
+                "t": "음식"
+            },
+            {
+                "t": "날씨"
+            },
+            {
+                "t": "쇼핑"
+            }
+        ],
+        "c": "운동"
+    },
+    {
+        "q": "다음 글을 읽고 내용과 같은 것을 고르십시오.<br><br>출퇴근 시간을 자유롭게 선택할 수 있는 유연근무제가 확대되면서 한국인의 여가 시간이 늘어나고 있습니다. 한국인의 평균 여가 시간은 평일에는 3.6시간이며, 주말에는 5.5시간입니다. 한국인들은 여가 시간에 텔레비전 시청을 가장 많이 하며, 모바일 콘텐츠를 보기도 합니다. 그리고 야외에서 산책이나 쇼핑을 하며 시간을 보내는 사람도 있습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "주말보다 평일 평균 여가 시간이 더 많습니다."
+            },
+            {
+                "t": "유연근무제의 확대로 여가 시간이 줄어들었습니다."
+            },
+            {
+                "t": "한국 사람들은 야외에서 여가 활동을 하지 않습니다."
+            },
+            {
+                "t": "한국인들은 남는 시간에 텔레비전을 가장 많이 봅니다."
+            }
+        ],
+        "c": "한국인들은 남는 시간에 텔레비전을 가장 많이 봅니다."
+    },
+    {
+        "q": "다음 내용과 관계있는 그림을 고르십시오.<br><br>당근을 썰고 있습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": null,
+                "i": "KA.png"
+            },
+            {
+                "t": null,
+                "i": "KB.png"
+            },
+            {
+                "t": null,
+                "i": "KC.png"
+            },
+            {
+                "t": null,
+                "i": "KD.png"
+            }
+        ],
+        "c": "KA.png"
+    },
+    {
+        "q": "다음 단어와 관계있는 것은 무엇입니까?<br><br>삶다",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "여행"
+            },
+            {
+                "t": "요리"
+            },
+            {
+                "t": "운동"
+            },
+            {
+                "t": "취미"
+            }
+        ],
+        "c": "요리"
+    },
+    {
+        "q": "다음 단어의 반대말은 무엇입니까?<br><br>짜다",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "덥다"
+            },
+            {
+                "t": "쉽다"
+            },
+            {
+                "t": "차갑다"
+            },
+            {
+                "t": "싱겁다"
+            }
+        ],
+        "c": "싱겁다"
+    },
+    {
+        "q": "밑줄 친 부분이 맞는 것을 고르십시오.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "불고기를 <u>만들아서</u> 먹었어요."
+            },
+            {
+                "t": "편지를 <u>쓰서</u> 친구에게 줬어요."
+            },
+            {
+                "t": "아침에 <u>일어났어서</u> 운동했어요."
+            },
+            {
+                "t": "고향에 <u>가서</u> 부모님을 만났어요."
+            }
+        ],
+        "c": "고향에 <u>가서</u> 부모님을 만났어요."
+    },
+    {
+        "q": "다음 글을 읽고 내용과 같은 것을 고르십시오.<br><br>한국 사람들은 여름 중 가장 더운 복날에 삼계탕을 먹습니다. 삼계탕은 닭과 함께 건강에 좋은 재료인 인삼, 찹쌀, 밤, 마늘 등을 넣고 푹 끓인 음식입니다. 여름에 땀을 많이 흘려 기운이 없을 때 뜨거운 삼계탕을 먹으면 힘이 납니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "삼계탕은 한국 사람들이 여름에 먹는 시원한 음식입니다."
+            },
+            {
+                "t": "한국 사람들은 삼계탕을 먹으면 기운이 난다고 생각합니다."
+            },
+            {
+                "t": "삼계탕은 닭과 몸에 좋은 재료를 볶아서 만드는 음식입니다."
+            },
+            {
+                "t": "한국 사람들은 여름 중 가장 시원한 날에 삼계탕을 먹습니다."
+            }
+        ],
+        "c": "한국 사람들은 삼계탕을 먹으면 기운이 난다고 생각합니다."
+    },
+    {
+        "q": "다음 단어와 관계있는 것은 무엇입니까?<br><br>인터넷 카페",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "집들이"
+            },
+            {
+                "t": "보증금"
+            },
+            {
+                "t": "이모티콘"
+            },
+            {
+                "t": "회원 가입"
+            }
+        ],
+        "c": "회원 가입"
+    },
+    {
+        "q": "다음 중 밑줄 친 부분이 맞는 문장을 고르십시오.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "이메일을 <u>쓰을래요</u>?"
+            },
+            {
+                "t": "아침에 뭘 <u>먹을래요</u>?"
+            },
+            {
+                "t": "어디에서 <u>만들을래요</u>?"
+            },
+            {
+                "t": "같이 음악을 <u>듣을래요</u>?"
+            }
+        ],
+        "c": "아침에 뭘 <u>먹을래요</u>?"
+    },
+    {
+        "q": "빈칸에 들어갈 가장 알맞은 것을 고르십시오.<br><br>저는 글 쓰는 것을 좋아합니다. 요즘은 _________ 에 한국 생활이나 문화를 소개하는 글을 쓰고 있습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "메뉴판"
+            },
+            {
+                "t": "요리법"
+            },
+            {
+                "t": "블로그"
+            },
+            {
+                "t": "동호회"
+            }
+        ],
+        "c": "블로그"
+    },
+    {
+        "q": "다음 글을 읽고 내용과 같은 것을 고르십시오.",
+        "img": "S.png",
+        "audio": null,
+        "a": [
+            {
+                "t": "이번 휴가 때 제주도에 비가 왔습니다."
+            },
+            {
+                "t": "마두 씨 SNS에 여행 사진이 있습니다."
+            },
+            {
+                "t": "아궁 씨는 제주도에 처음 가 봤습니다."
+            },
+            {
+                "t": "휴가 때 먹은 음식은 맛이 없었습니다"
+            }
+        ],
+        "c": "마두 씨 SNS에 여행 사진이 있습니다."
+    },
+    {
+        "q": "다음 글을 읽고 내용과 같은 것을 고르십시오.<br><br>한국에서는 전화나 앱을 통해 음식을 배달시키는 사람들이 많습니다. 특히 ‘배달 앱’을 이용하면 식당의 메뉴와 사용자들의 평점을 볼 수 있고 음식이 언제 배달되는지 확인할 수도 있습니다. 그리고 현금 외에도 카드, 휴대폰 등의 다양한 결제 수단이 있어 편리할 뿐만 아니라 할인을 해 주거나 쿠폰을 주기 때문에 인기가 많습니다.",
+        "img": null,
+        "audio": null,
+        "a": [
+            {
+                "t": "배달 앱은 현금 결제가 안 됩니다."
+            },
+            {
+                "t": "앱으로 주문하면 할인을 받지 못합니다."
+            },
+            {
+                "t": "음식을 주문할 때 전화가 앱보다 편합니다."
+            },
+            {
+                "t": "앱을 사용하면 배달 시간을 알 수 있습니다."
+            }
+        ],
+        "c": "앱을 사용하면 배달 시간을 알 수 있습니다."
+    }
+];
+
+    const cbMaster = [
+        { img: "cb1.jpg", ans: "42" }, { img: "cb2.jpg", ans: "96" }, { img: "cb3.jpg", ans: "35" }, { img: "cb4.jpg", ans: "6" }, { img: "cb5.jpg", ans: "73" }
+    ];
+
+</script>
+</body>
+</html>
