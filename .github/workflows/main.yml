@@ -1,14 +1,38 @@
-- name: Initialize and Build Android
+name: HTML to APK (Final Success)
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Prepare Folder and Install Tools
         run: |
-          # ၁။ "MyApp" နေရာမှာ သင်ပေးချင်တဲ့ App နာမည် (Space မပါဘဲ) ရေးပါ။
-          # ၂။ "com.kingeraser.myapp" နေရာမှာ Package ID (ဥပမာ- com.ubt.exam) ကို ပြင်ပါ။
-          npx cap init "UBTExam" com.ubt.exam --web-dir www
+          mkdir -p www
+          cp -r ./* www/ || true
+          rm -rf www/.github
+          npm install -g @ionic/cli
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Initialize and Build Android
+        run: |
+          # Project ကို www directory နဲ့ စတင်ခြင်း
+          npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
           
+          # Webview Settings ပြင်ဆင်ခြင်း
           sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
           
-          # ၃။ ဒီနေရာမှာလည်း အပေါ်ကအတိုင်း ID နဲ့ နာမည်ကို လိုက်ပြင်ပေးရပါမယ် (အရေးကြီးသည်)
-          echo '{"appId": "com.ubt.exam", "appName": "UBTExam", "webDir": "www", "server": {"allowNavigation": ["*"], "cleartext": true}}' > capacitor.config.json
+          # Local file access config ထည့်ခြင်း
+          echo '{"appId": "com.ubt5.app", "appName": "ubt5", "webDir": "www", "server": {"allowNavigation": ["*"], "cleartext": true}}' > capacitor.config.json
 
           export JAVA_HOME=$JAVA_HOME_21_X64
           npx cap sync android
@@ -16,12 +40,11 @@
 
       - name: Export APK
         run: |
-          # ၄။ ရလာမယ့် APK ဖိုင်ကို ခွဲခြားရလွယ်အောင် နာမည်ပေးပါ
-          cp android/app/build/outputs/apk/debug/app-debug.apk ./ubt-exam-app.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk ./KEEC13-ubt5-app.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          # GitHub Actions ထဲမှာ Download ဆွဲမယ့် link နာမည်ပါ
-          name: UBT-Exam-APK
-          path: ubt-exam-app.apk
+          name: KEEC13-ubt5-App-APK
+          path: KEEC13-ubt5-app.apk
+          
