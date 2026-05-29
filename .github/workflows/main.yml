@@ -94,7 +94,7 @@ jobs:
           $BUILD_TOOLS_PATH/zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk ubt5-aligned.apk
           $BUILD_TOOLS_PATH/apksigner sign --ks release.jks --ks-pass pass:$KEYSTORE_PASSWORD --ks-key-alias $KEY_ALIAS --out KEEC13-ubt5-app.apk ubt5-aligned.apk
 
-- name: Upload APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: KEEC13-ubt5-SDK33-Signed
