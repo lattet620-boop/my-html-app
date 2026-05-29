@@ -1,0 +1,27 @@
+- name: Initialize and Build Android
+        run: |
+          # ၁။ "MyApp" နေရာမှာ သင်ပေးချင်တဲ့ App နာမည် (Space မပါဘဲ) ရေးပါ။
+          # ၂။ "com.kingeraser.myapp" နေရာမှာ Package ID (ဥပမာ- com.ubt.exam) ကို ပြင်ပါ။
+          npx cap init "UBTExam" com.ubt.exam --web-dir www
+          npx cap add android
+          
+          sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+          
+          # ၃။ ဒီနေရာမှာလည်း အပေါ်ကအတိုင်း ID နဲ့ နာမည်ကို လိုက်ပြင်ပေးရပါမယ် (အရေးကြီးသည်)
+          echo '{"appId": "com.ubt.exam", "appName": "UBTExam", "webDir": "www", "server": {"allowNavigation": ["*"], "cleartext": true}}' > capacitor.config.json
+
+          export JAVA_HOME=$JAVA_HOME_21_X64
+          npx cap sync android
+          cd android && ./gradlew assembleDebug
+
+      - name: Export APK
+        run: |
+          # ၄။ ရလာမယ့် APK ဖိုင်ကို ခွဲခြားရလွယ်အောင် နာမည်ပေးပါ
+          cp android/app/build/outputs/apk/debug/app-debug.apk ./ubt-exam-app.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          # GitHub Actions ထဲမှာ Download ဆွဲမယ့် link နာမည်ပါ
+          name: UBT-Exam-APK
+          path: ubt-exam-app.apk
