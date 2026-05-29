@@ -1,4 +1,4 @@
-name: HTML to APK (Final Success SDK 33)
+name: HTML to APK (SDK 33 Final Fix)
 on: [push]
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
           
-          # Android Variables ကို အသေသတ်မှတ်ခြင်း
+          # Android Variables ကို သတ်မှတ်ခြင်း
           cat <<EOF > android/variables.gradle
           ext {
               minSdkVersion = 22
@@ -44,41 +44,20 @@ jobs:
           }
           EOF
 
-          # Version Code ကို 6 သို့ မြှင့်ခြင်း
-          sed -i 's/versionCode [0-9]*/versionCode 6/' android/app/build.gradle
+          # Version Code ကို 7 သို့ မြှင့်ခြင်း
+          sed -i 's/versionCode [0-9]*/versionCode 7/' android/app/build.gradle
           
           npx capacitor-assets generate --android --assetPath assets
-          
-          # Manifest ဖိုင်ကို Error ကင်းအောင် အသစ်ပြန်ရေးခြင်း
-          cat <<EOF > android/app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application
-                  android:allowBackup="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="ubt5"
-                  android:roundIcon="@mipmap/ic_launcher_round"
-                  android:supportsRtl="true"
-                  android:usesCleartextTraffic="true"
-                  android:theme="@style/AppTheme">
-                  <activity
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
-                      android:name="com.ubt5.app.MainActivity"
-                      android:label="ubt5"
-                      android:exported="true"
-                      android:theme="@style/AppTheme.NoActionBarLaunch">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-              <uses-permission android:name="android.permission.INTERNET" />
-          </manifest>
-          EOF
+
+          # Manifest Error ကို ဖြေရှင်းခြင်း (Sed ကို ပိုမိုတိကျစွာ အသုံးပြုခြင်း)
+          # application tag ထဲတွင် usesCleartextTraffic ကို ထည့်သွင်းခြင်း
+          MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' $MANIFEST_FILE
 
           export JAVA_HOME=$JAVA_HOME_17_X64
           npx cap sync android
+          
+          # Build လုပ်စဉ်အတွင်း clean လုပ်ခြင်း
           cd android && ./gradlew clean assembleRelease
 
       - name: Sign Android APK with Release Key
@@ -89,11 +68,12 @@ jobs:
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
           BUILD_TOOLS_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          
           $BUILD_TOOLS_PATH/zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk ubt5-aligned.apk
           $BUILD_TOOLS_PATH/apksigner sign --ks release.jks --ks-pass pass:$KEYSTORE_PASSWORD --ks-key-alias $KEY_ALIAS --out KEEC13-ubt5-app.apk ubt5-aligned.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KEEC13-ubt5-Final-Stable-APK
+          name: KEEC13-ubt5-SDK33-Final
           path: KEEC13-ubt5-app.apk
