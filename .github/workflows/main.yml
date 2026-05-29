@@ -1,4 +1,4 @@
-name: HTML to APK (Final Fix for SDK & Play Protect)
+name: HTML to APK (Final Fix for Splash & SDK)
 on: [push]
 
 jobs:
@@ -8,7 +8,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17 # SDK 33 အတွက် JDK 17 က ပိုပြီး Stable ဖြစ်ပါတယ်
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -29,12 +29,13 @@ jobs:
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
           
-          # Android build settings များကို အသေသတ်မှတ်ခြင်း (Error ကင်းဝေးစေရန်)
+          # Splash Screen Version အပါအဝင် လိုအပ်သော variables အားလုံးကို ထည့်သွင်းခြင်း
           cat <<EOF > android/variables.gradle
           ext {
               minSdkVersion = 22
               compileSdkVersion = 33
               targetSdkVersion = 33
+              coreSplashScreenVersion = '1.0.0'
               androidxActivityVersion = '1.7.0'
               androidxAppCompatVersion = '1.6.1'
               androidxCoordinatorLayoutVersion = '1.2.0'
@@ -47,7 +48,7 @@ jobs:
           }
           EOF
 
-          # Version Code မြှင့်ခြင်း (Play Protect အတွက် အရေးကြီးသည်)
+          # Version Code ကို ၂ သို့ မြှင့်ခြင်း
           sed -i 's/versionCode [0-9]*/versionCode 2/' android/app/build.gradle
           
           npx capacitor-assets generate --android --assetPath assets
@@ -71,5 +72,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KEEC13-ubt5-Final-APK
+          name: KEEC13-ubt5-SDK33-Signed-APK
           path: KEEC13-ubt5-app.apk
