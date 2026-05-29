@@ -1,4 +1,4 @@
-name: HTML to APK (SDK 33 Final Stable)
+name: HTML to APK (SDK 33 Final Fix)
 on: [push]
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
           
-          # Android Settings ကို တိုက်ရိုက် ပြင်ဆင်ခြင်း
+          # Android Settings ကို အမှန်ကန်ဆုံးဖြစ်အောင် အသေရိုက်ထည့်ခြင်း
           cat <<EOF > android/variables.gradle
           ext {
               minSdkVersion = 22
@@ -45,15 +45,23 @@ jobs:
           EOF
 
           # Version Code မြှင့်တင်ခြင်း
-          sed -i 's/versionCode [0-9]*/versionCode 3/' android/app/build.gradle
+          sed -i 's/versionCode [0-9]*/versionCode 5/' android/app/build.gradle
           
           npx capacitor-assets generate --android --assetPath assets
-          sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
           
+          # Error တက်နေသည့် Manifest ပြင်ဆင်မှုကို ပိုမိုလုံခြုံအောင် လုပ်ဆောင်ခြင်း
+          # ပတ်လမ်းကြောင်းကို တိုက်ရိုက်ညွှန်ပြပြီး ရှာမတွေ့လျှင်လည်း build မရပ်အောင် လုပ်ထားသည်
+          FILE="android/app/src/main/AndroidManifest.xml"
+          if grep -q "android:usesCleartextTraffic" "$FILE"; then
+            sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' "$FILE"
+          else
+            sed -i '/<application/ s/<application/<application android:usesCleartextTraffic="true"/' "$FILE"
+          fi
+
           export JAVA_HOME=$JAVA_HOME_17_X64
           npx cap sync android
           
-          # Build မလုပ်ခင် Cache ရှင်းခြင်း
+          # Build လုပ်စဉ်အတွင်း clean လုပ်ခြင်း
           cd android && ./gradlew clean assembleRelease
 
       - name: Sign Android APK with Release Key
@@ -65,7 +73,6 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
           BUILD_TOOLS_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
           
-          # Unsigned APK ကို ရှာဖွေပြီး လက်မှတ်ထိုးခြင်း
           $BUILD_TOOLS_PATH/zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk ubt5-aligned.apk
           $BUILD_TOOLS_PATH/apksigner sign --ks release.jks --ks-pass pass:$KEYSTORE_PASSWORD --ks-key-alias $KEY_ALIAS --out KEEC13-ubt5-app.apk ubt5-aligned.apk
 
