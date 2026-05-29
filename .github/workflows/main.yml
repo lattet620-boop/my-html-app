@@ -16,12 +16,19 @@ jobs:
 
       - name: Prepare Folder and Install Tools
         run: |
-          mkdir -p www
-          cp -r ./* www/ || true
-          rm -rf www/.github
-          # @capacitor/assets ကို Icon ထုတ်ရန်အတွက် ထည့်သွင်းလိုက်ပါသည်
+          # Tool များသွင်းခြင်း
           npm install -g @ionic/cli @capacitor/assets
           npm install @capacitor/core @capacitor/cli @capacitor/android
+
+          # Icon နှင့် Splash အတွက် assets folder တည်ဆောက်ပြီး ပုံများကူးထည့်ခြင်း
+          mkdir -p assets
+          cp icon.png assets/icon.png || echo "icon.png not found"
+          cp splash.png assets/splash.png || echo "splash.png not found"
+
+          # Web App (HTML) များအတွက် www folder ပြင်ဆင်ခြင်း
+          mkdir -p www
+          cp -r ./* www/ || true
+          rm -rf www/.github www/assets www/www || true
 
       - name: Initialize and Build Android
         run: |
@@ -29,8 +36,8 @@ jobs:
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
           
-          # Icon နှင့် Splash Screen ထုတ်ပေးသည့်အဆင့် (icon.png နှင့် splash.png ရှိရန်လိုသည်)
-          npx capacitor-assets generate --android
+          # Icon နှင့် Splash Screen ကို assets folder ထဲမှ ထုတ်ယူအသုံးပြုခြင်း
+          npx capacitor-assets generate --android --assetPath assets
 
           # Webview Settings ပြင်ဆင်ခြင်း
           sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
