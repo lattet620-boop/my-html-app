@@ -1,4 +1,4 @@
-name: HTML to APK (SDK 33 Final Success Build)
+name: HTML to APK (SDK 21 - Original Stable)
 on: [push]
 
 jobs:
@@ -8,13 +8,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
-      - name: Prepare Folder and Tools
+      - name: Prepare Folder and Install Tools
         run: |
           npm install -g @ionic/cli @capacitor/assets
           npm install @capacitor/core @capacitor/cli @capacitor/android
@@ -24,64 +24,23 @@ jobs:
           cp -r ./* www/ || true
           rm -rf www/.github www/assets www/www || true
 
-      - name: Initialize and Configure Android
+      - name: Initialize and Build Android
         run: |
+          # SDK Version များကို Capacitor ၏ Default (SDK 21) အတိုင်းထားရှိသည်
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
-          
-          # Android Variables သတ်မှတ်ခြင်း
-          cat <<EOF > android/variables.gradle
-          ext {
-              minSdkVersion = 22
-              compileSdkVersion = 33
-              targetSdkVersion = 33
-              coreSplashScreenVersion = '1.0.0'
-              androidxActivityVersion = '1.7.0'
-              androidxAppCompatVersion = '1.6.1'
-              androidxCoordinatorLayoutVersion = '1.2.0'
-              androidxCoreVersion = '1.10.0'
-              androidxFragmentVersion = '1.5.6'
-          }
-          EOF
-
-          # Version Code ကို 8 သို့ မြှင့်ခြင်း
-          sed -i 's/versionCode [0-9]*/versionCode 8/' android/app/build.gradle
-          
           npx capacitor-assets generate --android --assetPath assets
 
-          # Manifest ကို အသစ်ပြန်ရေးပြီး tools:replace ကိုသုံး၍ Conflict ဖြေရှင်းခြင်း
-          cat <<EOF > android/app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools">
-              <application
-                  android:allowBackup="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="ubt5"
-                  android:roundIcon="@mipmap/ic_launcher_round"
-                  android:supportsRtl="true"
-                  android:usesCleartextTraffic="true"
-                  android:theme="@style/AppTheme"
-                  tools:replace="android:allowBackup,android:usesCleartextTraffic">
-                  <activity
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
-                      android:name="com.ubt5.app.MainActivity"
-                      android:label="ubt5"
-                      android:exported="true"
-                      android:theme="@style/AppTheme.NoActionBarLaunch">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-              <uses-permission android:name="android.permission.INTERNET" />
-          </manifest>
-          EOF
+          # Webview နှင့် Network Security ပြင်ဆင်ခြင်း
+          sed -i 's/android:usesCleartextTraffic="false"/android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+          
+          echo '{"appId": "com.ubt5.app", "appName": "ubt5", "webDir": "www", "server": {"allowNavigation": ["*"], "cleartext": true}}' > capacitor.config.json
 
-          export JAVA_HOME=$JAVA_HOME_17_X64
+          export JAVA_HOME=$JAVA_HOME_21_X64
           npx cap sync android
-          cd android && ./gradlew clean assembleRelease
+          
+          # Release Version အဖြစ် တည်ဆောက်ခြင်း
+          cd android && ./gradlew assembleRelease
 
       - name: Sign Android APK with Release Key
         env:
@@ -89,13 +48,24 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
+          # Keystore ပြန်ထုတ်ခြင်း
           echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
+          
           BUILD_TOOLS_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          
+          # 1. Zipalign လုပ်ခြင်း
           $BUILD_TOOLS_PATH/zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk ubt5-aligned.apk
-          $BUILD_TOOLS_PATH/apksigner sign --ks release.jks --ks-pass pass:$KEYSTORE_PASSWORD --ks-key-alias $KEY_ALIAS --out KEEC13-ubt5-app.apk ubt5-aligned.apk
+          
+          # 2. ဆရာ့ရဲ့ Keystore ဖြင့် တရားဝင် လက်မှတ်ထိုးခြင်း
+          $BUILD_TOOLS_PATH/apksigner sign --ks release.jks \
+            --ks-pass pass:$KEYSTORE_PASSWORD \
+            --ks-key-alias $KEY_ALIAS \
+            --out KEEC13-ubt5-app.apk ubt5-aligned.apk
+          
+          echo "✅ Official Signed APK Created Successfully!"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KEEC13-ubt5-SDK33-Signed
+          name: KEEC13-ubt5-Official-APK
           path: KEEC13-ubt5-app.apk
