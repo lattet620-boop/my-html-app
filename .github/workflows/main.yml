@@ -1,4 +1,4 @@
-name: HTML to APK (Official Release Signed)
+name: HTML to APK (SDK 34 + Official Release Signed)
 on: [push]
 
 jobs:
@@ -29,6 +29,11 @@ jobs:
         run: |
           npx cap init ubt5 com.ubt5.app --web-dir www
           npx cap add android
+          
+          # --- SDK Version မြှင့်တင်ခြင်း (Android 14 အတွက်) ---
+          sed -i 's/compileSdkVersion = [0-9]*/compileSdkVersion = 34/' android/variables.gradle
+          sed -i 's/targetSdkVersion = [0-9]*/targetSdkVersion = 34/' android/variables.gradle
+          
           npx capacitor-assets generate --android --assetPath assets
           
           # Webview နှင့် Network Security ပြင်ဆင်ခြင်း
@@ -39,35 +44,31 @@ jobs:
           export JAVA_HOME=$JAVA_HOME_21_X64
           npx cap sync android
           
-          # Debug အစား Release Version အဖြစ် တည်ဆောက်ခြင်း
+          # Release Version အဖြစ် တည်ဆောက်ခြင်း
           cd android && ./gradlew assembleRelease
 
       - name: Sign Android APK with Release Key
         env:
-          # GitHub Secrets ထဲမှ အချက်အလက်များကို ခေါ်ယူခြင်း
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          # Base64 မှ Keystore File ပြန်ထုတ်ခြင်း
           echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
-          
-          # Android Build Tools လမ်းကြောင်းရှာခြင်း
           BUILD_TOOLS_PATH=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
           
-          # 1. Zipalign လုပ်ခြင်း (APK ကို ပေါ့ပါးသွက်လက်အောင်လုပ်ခြင်း)
+          # 1. Zipalign လုပ်ခြင်း
           $BUILD_TOOLS_PATH/zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk ubt5-aligned.apk
           
-          # 2. ဆရာ့ရဲ့ Keystore ဖြင့် တရားဝင် လက်မှတ်ထိုးခြင်း
+          # 2. တရားဝင် လက်မှတ်ထိုးခြင်း
           $BUILD_TOOLS_PATH/apksigner sign --ks release.jks \
             --ks-pass pass:$KEYSTORE_PASSWORD \
             --ks-key-alias $KEY_ALIAS \
             --out KEEC13-ubt5-app.apk ubt5-aligned.apk
           
-          echo "✅ APK Signing Complete!"
+          echo "✅ APK Signing with SDK 34 Complete!"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KEEC13-ubt5-App-APK
+          name: KEEC13-ubt5-App-APK-SDK34
           path: KEEC13-ubt5-app.apk
