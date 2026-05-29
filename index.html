@@ -10,11 +10,17 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Montserrat', 'Pyidaungsu', sans-serif; }
         body { background: #f0f2f5; margin: 0; height: 100dvh; display: flex; flex-direction: column; color: var(--text); }
 
-        .screen { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle, #1e293b, #080e1a); }
-        .card { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(20px); width: 100%; max-width: 500px; border-radius: 30px; border: 4px solid var(--primary); text-align: center; overflow: hidden; box-shadow: 0 0 30px rgba(0, 255, 135, 0.3); color: white; }
+        .screen { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle, #1e293b, #080e1a); overflow-y: auto; }
+        .card { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(20px); width: 100%; max-width: 500px; border-radius: 30px; border: 4px solid var(--primary); text-align: center; overflow: hidden; box-shadow: 0 0 30px rgba(0, 255, 135, 0.3); color: white; margin: auto; }
         .card-header { background: linear-gradient(90deg, #00b09b, #96c93d); padding: 35px; font-family: 'Orbitron'; font-weight: bold; font-size: 24px; }
 
-        input#user-name { width: 80%; padding: 15px; border-radius: 10px; border: none; margin-bottom: 20px; font-size: 18px; text-align: center; outline: none; }
+        /* အသစ်ထည့်သွင်းထားသော သင်တန်းကြော်ငြာ CSS ဒီဇိုင်း */
+        .promo-box { background: rgba(255, 255, 255, 0.08); border-radius: 15px; padding: 18px; margin-bottom: 25px; border: 1px dashed rgba(0, 255, 135, 0.4); text-align: center; }
+        .promo-title { font-size: 22px; font-weight: 700; color: var(--primary); margin: 0 0 8px 0; letter-spacing: 1px; }
+        .promo-sub { font-size: 15px; color: #e2e8f0; margin: 0 0 15px 0; font-weight: bold; }
+        .promo-link { display: inline-flex; align-items: center; justify-content: center; background: #0088cc; color: white; text-decoration: none; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 14px; margin-bottom: 12px; transition: 0.2s; width: 100%; box-shadow: 0 4px 10px rgba(0,136,204,0.3); }
+        .promo-link:hover { opacity: 0.9; }
+        .promo-phone { display: inline-flex; align-items: center; justify-content: center; background: #25d366; color: black; text-decoration: none; padding: 12px 20px; border-radius: 25px; font-weight: 900; font-size: 15px; width: 100%; box-shadow: 0 4px 10px rgba(37,211,102,0.3); }
 
         /* Exam Screen Layout */
         #exam-screen { display: none; flex-direction: column; height: 100vh; }
@@ -28,17 +34,13 @@
         .q-text { font-weight: bold; font-size: 16px; margin-bottom: 15px; color: #334155; }
         .q-img { max-width: 100%; max-height: 200px; border-radius: 10px; margin-bottom: 15px; display: block; border: 1px solid #eee; }
 
+        /* Option Grid inside each question */
         .a-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .ans-item { background: #f8fafc; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; position: relative; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; padding: 12px; font-weight: 700; font-size: 14px; color: var(--text); transition: 0.2s; min-height: 60px; gap: 10px; }
+        .ans-item { background: #f8fafc; border-radius: 12px; border: 2px solid #e2e8f0; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; font-weight: 700; font-size: 14px; color: var(--text); transition: 0.2s; min-height: 60px; }
         
-        .opt-num { min-width: 28px; height: 28px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #64748b; transition: 0.2s; }
-
         .ans-item.selected { background: var(--light-green) !important; border-color: #32cd32 !important; }
-        .ans-item.selected .opt-num { background: #32cd32; color: white; }
         .ans-item.correct-ans { background: #dcfce7 !important; border-color: var(--success) !important; }
-        .ans-item.correct-ans .opt-num { background: var(--success); color: #000; }
         .ans-item.wrong-ans { background: #fee2e2 !important; border-color: var(--danger) !important; }
-        .ans-item.wrong-ans .opt-num { background: var(--danger); color: white; }
 
         .submit-area { padding: 20px; background: #fff; border-top: 1px solid #e2e8f0; text-align: center; }
         .submit-btn { width: 100%; max-width: 400px; padding: 18px; border-radius: 15px; background: var(--danger); color: #fff; border: none; font-weight: 900; font-size: 18px; cursor: pointer; }
@@ -46,20 +48,27 @@
         /* Keypad for CB */
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 250px; margin: 10px auto; }
         .key { background: #f1f5f9; border: none; padding: 12px; border-radius: 10px; font-size: 18px; font-weight: 800; cursor: pointer; color: var(--dark); }
-        
-        /* Loading Overlay */
-        #loading { display: none; background: rgba(0,0,0,0.8); color: white; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loading">SAVING SCORE...</div>
-
     <div id="login-screen" class="screen">
         <div class="card">
-            <div class="card-header">EPS-TOPIK UBT TEST</div>
-            <div style="padding: 45px;">
-                <input type="text" id="user-name" placeholder="Enter Your Name" autocomplete="off">
+            <div class="card-header">EPS-TOPIK UBT 5 TEST</div>
+            <div style="padding: 35px 45px 45px 45px;">
+                
+                <!-- သင်တန်းကြော်ငြာ ဧရိယာ -->
+                <div class="promo-box">
+                    <div class="promo-title">Korea Eps E9 Channel!</div>
+                    <div class="promo-sub">မေးခွန်း၊ မီးနင်း၊ သဒ္ဒါ အတန်းအပ်ရန်</div>
+                    <a href="https://t.me/pyaeaung92" class="promo-link" target="_blank">
+                        ✈️ Telegram: t.me/pyaeaung92
+                    </a>
+                    <a href="tel:09450052637" class="promo-phone">
+                        📞 09450052637 သို့ ဆက်သွယ်ရန်
+                    </a>
+                </div>
+
                 <button onclick="startExam()" style="width:100%; padding:22px; border-radius:15px; background:var(--success); border:none; color:#000; font-weight:900; font-size:20px; cursor:pointer;">START EXAM</button>
             </div>
         </div>
@@ -67,7 +76,7 @@
 
     <div id="exam-screen">
         <div class="ubt-header">
-            <div class="h-box" id="student-name">STUDENT</div>
+            <div class="h-box">STUDENT</div>
             <div class="h-box" id="timer-val" style="color:var(--success); font-size:20px;">25:00</div>
             <div class="h-box">Solved: <span id="rem-count">0</span>/20</div>
         </div>
@@ -110,11 +119,9 @@
     </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzESotsZA-vabanAiAo6wnhO6YNmAIQMe_FgiWs-SIbRmyv5b1LY7_rSA1hnlK2n1qy/exec"; // ဒီနေရာမှာ Web App URL အစားထိုးပါ
-    
     let questions = [], userAns = Array(20).fill(null); 
     let examClock = 1500, timerId; 
-    let isReviewMode = false, userName = "";
+    let isReviewMode = false;
     let cbQuestions = [], cbIdx = 0, cbCorrect = 0, cbClock = 60, currentInput = "";
 
     const shuffle = (array) => {
@@ -126,10 +133,6 @@
     };
 
     function startExam() {
-        userName = document.getElementById('user-name').value.trim();
-        if(!userName) return alert("Please enter your name");
-        
-        document.getElementById('student-name').innerText = userName;
         let r_shuffled = shuffle([...readingData]).slice(0, 20);
         questions = r_shuffled.map(q => {
             let originalCorrect = q.c;
@@ -154,30 +157,52 @@
         container.innerHTML = questions.map((q, qIdx) => {
             let optionsHtml = q.a.map((opt, aIdx) => {
                 let content = opt.t ? `<span>${opt.t}</span>` : `<img src="${opt.i}" style="height:50px;">`;
-                let statusClass = (isReviewMode && aIdx === q.c) ? "correct-ans" : (isReviewMode && userAns[qIdx] === aIdx ? "wrong-ans" : (userAns[qIdx] === aIdx ? "selected" : ""));
-                return `<div class="ans-item ${statusClass}" onclick="pick(${qIdx}, ${aIdx})"><div class="opt-num">${aIdx + 1}</div>${content}</div>`;
+                let statusClass = "";
+                if (isReviewMode) {
+                    if (aIdx === q.c) statusClass = "correct-ans";
+                    else if (userAns[qIdx] === aIdx) statusClass = "wrong-ans";
+                } else if (userAns[qIdx] === aIdx) {
+                    statusClass = "selected";
+                }
+                return `<div class="ans-item ${statusClass}" onclick="pick(${qIdx}, ${aIdx})">${content}</div>`;
             }).join('');
-            return `<div class="q-container"><div class="q-text">${qIdx + 1}. ${q.q}</div>${q.img ? `<img src="${q.img}" class="q-img">` : ''}<div class="a-grid">${optionsHtml}</div></div>`;
+
+            return `
+                <div class="q-container" id="q-block-${qIdx}">
+                    <div class="q-text">${qIdx + 1}. ${q.q}</div>
+                    ${q.img ? `<img src="${q.img}" class="q-img">` : ''}
+                    <div class="a-grid">${optionsHtml}</div>
+                </div>
+            `;
         }).join('');
         document.getElementById('rem-count').innerText = userAns.filter(a => a !== null).length;
     }
 
-    function pick(qIdx, aIdx) { if (!isReviewMode) { userAns[qIdx] = aIdx; renderAll(); } }
+    function pick(qIdx, aIdx) {
+        if (isReviewMode) return;
+        userAns[qIdx] = aIdx;
+        renderAll();
+    }
 
     function finishExam() {
-        if(!confirm("Submit and start Colour Blind Test?")) return;
+        if(!confirm("မေးခွန်းများအားလုံးကို တင်သွင်းပြီး Colour Blind Test ဖြေဆိုမှာလား?")) return;
         clearInterval(timerId);
         document.getElementById('exam-screen').style.display = 'none';
         document.getElementById('cb-screen').style.display = 'flex';
         cbQuestions = shuffle([...cbMaster]).slice(0, 5); 
         renderCB();
-        setInterval(() => { if(cbClock > 0) { cbClock--; document.getElementById('cb-timer-val').innerText = cbClock; } else if(cbIdx < cbQuestions.length) showFinal(); }, 1000);
+        let cbTimer = setInterval(() => { 
+            if(cbClock > 0) { 
+                cbClock--; document.getElementById('cb-timer-val').innerText = cbClock; 
+            } else { clearInterval(cbTimer); showFinal(); } 
+        }, 1000);
     }
 
     function renderCB() {
         if(cbIdx >= cbQuestions.length) return showFinal();
         document.getElementById('cb-img').src = cbQuestions[cbIdx].img;
-        currentInput = ""; document.getElementById('cb-display').innerText = "";
+        currentInput = "";
+        document.getElementById('cb-display').innerText = "";
     }
 
     function pressKey(val) {
@@ -187,31 +212,16 @@
     }
 
     function nextCB() {
-        if(currentInput === "") return;
+        if(currentInput === "") return alert("Enter number");
         if(currentInput === cbQuestions[cbIdx].ans) cbCorrect++;
         cbIdx++; renderCB();
     }
 
-    async function showFinal() {
+    function showFinal() {
         document.getElementById('cb-screen').style.display = 'none';
-        document.getElementById('loading').style.display = 'flex';
-        
-        let correctCount = userAns.filter((ans, i) => ans === questions[i].c).length;
-        let score = correctCount * 5;
-
-        // Google Sheets သို့ Data ပို့ခြင်း
-        try {
-            await fetch(SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: userName, score: score })
-            });
-        } catch (e) { console.error(e); }
-
-        document.getElementById('loading').style.display = 'none';
         document.getElementById('result-screen').style.display = 'flex';
-        document.getElementById('res-score').innerText = score;
+        let correctCount = userAns.filter((ans, i) => ans === questions[i].c).length;
+        document.getElementById('res-score').innerText = correctCount * 5;
         document.getElementById('cb-res-text').innerText = `Colour Blind Test: ${cbCorrect} / ${cbQuestions.length} Correct`;
     }
 
@@ -644,4 +654,4 @@
 
 </script>
 </body>
-</html>
+    </html>
